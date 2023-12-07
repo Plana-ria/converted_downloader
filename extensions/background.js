@@ -28,12 +28,14 @@ chrome.runtime.onInstalled.addListener(function() {
       id: "convert_gif_to_mp4",
       contexts: ["image"],
     });
+    /**
     chrome.contextMenus.create({
       title: "MOVに変換(gif)",
       parentId: "converted_download",
       id: "convert_gif_to_mov",
       contexts: ["image"],
     });
+    */
 
     chrome.contextMenus.create({
         title: "MP4に変換",
@@ -41,12 +43,14 @@ chrome.runtime.onInstalled.addListener(function() {
         id: "convert_video_to_mp4",
         contexts: ["video"],
     });
+    /**
     chrome.contextMenus.create({
     title: "MOVに変換",
     parentId: "converted_download",
     id: "convert_video_to_mov",
     contexts: ["video"],
     });
+    */
 
     chrome.contextMenus.create({
         title: "MP3に変換",

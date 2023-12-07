@@ -39,18 +39,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 async function convertAndSave(format, sourceType, srcUrl) {
     switch (sourceType) {
         case "image":
-            jpeg_to_png(format, sourceType, srcUrl);
+            if (format=="png") {
+                performConversionAndDownload('jpg', 'image', srcUrl, 'image/png', 'output-image', 'png');
+            }else if(format=="jpg") {
+                performConversionAndDownload('png', 'image', srcUrl, 'image/jpg', 'output-image', 'jpg');
+            }
             break;
         case "gif":
             if (format=="mp4") {
-                gif_to_mp4(format, sourceType, srcUrl);
+                performConversionAndDownload('gif', 'video', srcUrl, 'video/mp4', 'output-video', 'mp4');
+            }else if(format=="mov") {
+                performConversionAndDownload('gif', 'video', srcUrl, 'video/quicktime', 'output-video', 'mov');
             }
             break;
         case "video":
-            
+            if (format=="mp4") {
+                performConversionAndDownload('webm', 'video', srcUrl, 'video/mp4', 'output-video', 'mp4');
+            }else if(format=="mov") {
+                performConversionAndDownload('webm', 'video', srcUrl, 'video/quicktime', 'output-video', 'mov');
+            }
             break;
         case "audio":
-            
+            if (format=="mp3") {
+                performConversionAndDownload('wav', 'audio', srcUrl, 'audio/mp3', 'output-audio', 'mp3');
+            }else if(format=="wav") {
+                performConversionAndDownload('mp3', 'audio', srcUrl, 'audio/wav', 'output-audio', 'wav');
+            }
             break;
         default:
             break;
@@ -59,64 +73,41 @@ async function convertAndSave(format, sourceType, srcUrl) {
     
 }
 
-async function jpeg_to_png(format, sourceType, srcUrl) {
+async function performConversionAndDownload(format, sourceType, srcUrl, outputType, outputElementId, outputExtension) {
     const message = document.getElementById('message');
     const ffmpeg = await loadFFmpeg();
 
     const fileName = extractFileNameFromURL(srcUrl);
-    const name = fileName+'.jpeg';
-    await ffmpeg.writeFile(name, await fetchFile(srcUrl));
-    message.innerHTML = '変換開始';
-    await ffmpeg.exec(['-i', name, 'output.png']);
-    message.innerHTML = fileName+'.jpeg';
-    const data = await ffmpeg.readFile('output.png');
+    const inputName = fileName + '.' + sourceType;
+    const outputName = 'output.' + outputExtension;
 
-    const image = document.getElementById('output-image');
-    image.src = URL.createObjectURL(new Blob([data.buffer], { type: 'image/png' }));
+    await ffmpeg.writeFile(inputName, await fetchFile(srcUrl));
+
+    message.innerHTML = '変換開始';
+    await ffmpeg.exec(['-i', inputName, outputName]);
+    message.innerHTML = fileName + '.' + sourceType;
+
+    const data = await ffmpeg.readFile(outputName);
+
+    const outputElement = document.getElementById(outputElementId);
+    outputElement.src = URL.createObjectURL(new Blob([data.buffer], { type: outputType }));
 
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([data.buffer], { type: 'image/png' }));
-    link.download = fileName+'.png';
+    link.href = URL.createObjectURL(new Blob([data.buffer], { type: outputType }));
+    link.download = fileName + '.' + outputExtension;
     link.click();
-    if (typeof link.remove === 'function') {
-        link.remove();
-      } else if (typeof link.parentNode !== 'undefined' && link.parentNode !== null) {
-        link.parentNode.removeChild(link);
-      } else {
-        console.error('Unable to remove link element.');
-    }
 
-
+    removeElement(link);
 }
 
-async function gif_to_mp4(format, sourceType, srcUrl) {
-    const message = document.getElementById('message');
-    const ffmpeg = await loadFFmpeg();
-
-    const fileName = extractFileNameFromURL(srcUrl);
-    const name = fileName+'.gif';
-    await ffmpeg.writeFile(name, await fetchFile(srcUrl));
-    message.innerHTML = '変換開始';
-    await ffmpeg.exec(['-i', name, 'output.mp4']);
-    message.innerHTML = name;
-    const data = await ffmpeg.readFile('output.mp4');
-
-    const video = document.getElementById('output-video');
-    video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-    link.download = fileName+'.mp4';
-    link.click();
-    if (typeof link.remove === 'function') {
-        link.remove();
-      } else if (typeof link.parentNode !== 'undefined' && link.parentNode !== null) {
-        link.parentNode.removeChild(link);
-      } else {
-        console.error('Unable to remove link element.');
+function removeElement(element) {
+    if (typeof element.remove === 'function') {
+        element.remove();
+    } else if (element.parentNode !== null) {
+        element.parentNode.removeChild(element);
+    } else {
+        console.error('Unable to remove element.');
     }
-
-
 }
 
 
